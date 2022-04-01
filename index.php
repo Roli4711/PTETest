@@ -21,7 +21,7 @@ $user = "infoprot_pt";
 $pwd = "Roli4711*";
 */
 
-$dbname = "infoprot_beispiel";
+$dbname = "infoprot_bakery";
 include("connect/dbname.php");
 
 $conn = mysqli_connect($server, $user, $pwd, "$dbname");
@@ -63,9 +63,12 @@ $strasse = array("Bahnhofstrasse", "Hauptstrasse", "Dorfstrasse", "Industriestra
     
 $orte = array("St.Gallen", "St.Gallen", "St.Gallen", "St.Gallen", "St.Gallen", "Herisau", "Gossau", "Wittenbach", "Abtwil", "Teufen", "Degersheim", "Dicken", "Altstätten", "Appenzell", "Gonten",
     "Wil", "Niederuzwil", "Uzwil", "Zuzwil", "Flawil", "Stein AR", "Trogen", "Rorschach", "Staad", "Muolen", "Waldkirch", "Arnegg", "Waldstatt", "Urnäsch", "Hundwil", "Rheineck", "Thal");
+$cant = array("SG", "SG", "SG", "SG", "SG", "AR", "SG", "SG", "SG", "AR", "SG", "SG", "SG", "AI", "AI", "SG", "SG", "SG", "SG", "SG", "AR", "AR", "SG", "SG", "SG", "SG", "SG", "AR", "AR", "AR", "SG", "SG");
 $plz = array("9000", "9008", "9016", "9014", "9012", "9100", "9200", "9300", "9030", "9053", "9113", "9115", "9450", "9050", "9108", "9500", "9244", "9240", "9524", "9230", "9063", "9043",
     "9430", "9422", "9313", "9205", "9212", "9104", "9107", "9064", "9424", "9425");
-    
+
+$bank = array("Raiffeisen", "UBS", "CreditSuisse", "Kantonalbank", "PostFinance");
+
 $sex = null;
 $sql = "SELECT * FROM code WHERE Category = 'SEX' AND (Code = 'M' OR Code = 'W') ORDER BY idCode";
 echo "<br>$sql";
@@ -127,6 +130,7 @@ while ($row = $res->fetch_assoc()) {
     $hlpstr = utf8_encode($strasse[$rndStr] . " " . $rndStrNr);
     $hlport = utf8_encode($orte[$rndOrte]);
     $hlpplz = $plz[$rndOrte];
+    $hlpkant = $cant[$rndOrte];
     $hlpcntry = $cntry;
     
     $start = $row["Start"];
@@ -165,27 +169,25 @@ echo "<br>$hlpname - $hlpvname: $birth";
     $hlpname = utf8_encode($hlpname);
 
     $ahv = "";
-//    if (trim($row["AHVNr"]) != "") {
-        for ($j = 0; $j < 3; $j++) {
-            $n = rand(1, 9);
-            $ahv .= "$n";
-        }
-        $ahv .= ".";
-        for ($j = 0; $j < 4; $j++) {
-            $n = rand(1, 9);
-            $ahv .= "$n";
-        }
-        $ahv .= ".";
-        for ($j = 0; $j < 4; $j++) {
-            $n = rand(1, 9);
-            $ahv .= "$n";
-        }
-        $ahv .= ".";
-        for ($j = 0; $j < 2; $j++) {
-            $n = rand(1, 9);
-            $ahv .= "$n";
-        }
-//    }
+    for ($j = 0; $j < 3; $j++) {
+        $n = rand(1, 9);
+        $ahv .= "$n";
+    }
+    $ahv .= ".";
+    for ($j = 0; $j < 4; $j++) {
+        $n = rand(1, 9);
+        $ahv .= "$n";
+    }
+    $ahv .= ".";
+    for ($j = 0; $j < 4; $j++) {
+        $n = rand(1, 9);
+        $ahv .= "$n";
+    }
+    $ahv .= ".";
+    for ($j = 0; $j < 2; $j++) {
+        $n = rand(1, 9);
+        $ahv .= "$n";
+    }
 
     $sql1 = "SELECT * FROM user WHERE MKZ = '$mkz'";
     $res1 = $conn->query($sql1);
@@ -194,7 +196,17 @@ echo "<br>$hlpname - $hlpvname: $birth";
     }
     echo "<br>$mkz";
     $upd = "UPDATE user SET MKZ = '$mkz', Name = '$hlpname', Firstname = '$hlpvname', Sex = $sex, Address1 = '$hlpstr', Country = $hlpcntry, ZIP = '$hlpplz', City = '$hlport', Language = $lang, " .
-        "TelNr = '$telnr', MobileNr = '$mobnr', Start = '$start', LocationCanton = $kant, LocationPLZ = '9000', Birthdate = '$birth', Mail = '$mail', Code = '1111', AHVNr = '$ahv' WHERE idUser = " . $row["idUser"];
+        "TelNr = '$telnr', MobileNr = '$mobnr', Start = '$start', LocationCanton = $kant, LocationPLZ = '', Birthdate = '$birth', Mail = '$mail', Code = '1111', AHVNr = '$ahv' WHERE idUser = " . $row["idUser"];
+    echo $upd . "<br>";
+    $resupd = $conn->query($upd);
+
+    $kanton = null;
+    $sqlcant = "SELECT * FROM code WHERE Category = 'KANTON' AND Code = '$hlpkant'";
+    $rescant = $conn->query($sqlcant);
+    $rowcant = $rescant->fetch_assoc();
+    if ($rowcant && $rescant->num_rows > 0)
+        $kanton = $rowcant["idCode"];
+    $upd = "UPDATE activity SET LivingCanton = '$hlpkant', LivingGemeinde = '$hlport', LocationPLZ = '$hlpplz'" . ($kanton != null?", LocationCanton = $kanton":"") . " WHERE idUser = " . $row["idUser"];
     echo $upd . "<br>";
     $resupd = $conn->query($upd);
 
@@ -204,7 +216,9 @@ echo "<br>$hlpname - $hlpvname: $birth";
     if ($rowf && $resf->num_rows > 0) {
         if (trim($rowf["IBANNo"]) != "") {
             $iban = "CH52 0483 5012 3456 7100 0";
-            $upd = "UPDATE finance SET IBANNo = '$iban' WHERE idUser = " . $row["idUser"];
+            $rndBankname = rand(0, count($bank) - 1);
+            $hlpbankname = $bank[$rndBankname];
+            $upd = "UPDATE finance SET BankName = '$hlpbankname', IBANNo = '$iban', ClearingNo = '', BankZIP = '$hlpplz', BankCity = '$hlport' WHERE idUser = " . $row["idUser"];
             $conn->query($upd);
         }
     }
@@ -243,7 +257,8 @@ while ($row = $res->fetch_assoc()) {
 }
 
 $sbName = rand(0, count($name) - 1);
-$sbVName = rand(0, count($vnameM) - 1);
+$sbMVName = rand(0, count($vnameM) - 1);
+$sbFVName = rand(0, count($vnameF) - 1);
 
 $ii = 0;
 $sql = "SELECT * FROM licencetable WHERE type LIKE 'KA%'";
@@ -273,7 +288,7 @@ while ($row = $res->fetch_assoc()) {
     $ahvnam = "Kantonale Arbeitslosenkasse";
     $ahvstr = "Musterstrasse 1";
     $ahvort = "9000 St.Gallen";
-    $kasb = utf8_encode($sbVName . " " . $sbName);
+    $kasb = utf8_encode((rand(0, 10) < 7?$vnameF[$sbFVName]:$vnameM[$sbMVName]) . " " . $name[$sbName]);
 
     if (strpos($row["type"], "KAADRNAME") > -1) {
         $sql2 = "UPDATE licencetable SET value = '$hlpname' WHERE idLicenceTable = " . $row["idLicenceTable"];
@@ -313,6 +328,10 @@ while ($row = $res->fetch_assoc()) {
     }
     else if (strpos($row["type"], "KAIBAN") > -1) {
         $sql2 = "UPDATE licencetable SET value = '$iban' WHERE idLicenceTable = " . $row["idLicenceTable"];
+        $conn->query($sql2);
+    }
+    else if (strpos($row["type"], "KAMAIL") > -1) {
+        $sql2 = "UPDATE licencetable SET value = 'info@protimer.ch' WHERE idLicenceTable = " . $row["idLicenceTable"];
         $conn->query($sql2);
     }
 }
@@ -368,7 +387,7 @@ $sql = "SELECT * FROM code WHERE Category = 'DEPARTMENT'";
 $res = $conn->query($sql);
 while ($row = $res->fetch_assoc()) {
     $nr++;
-    $hlpsql = "UPDATE code SET Code = 'ABT$nr', Description = 'Abteilung $nr' WHERE idCode = " . $row["idCode"];
+    $hlpsql = "UPDATE code SET Code = '" . $nr . "ABT', Description = 'Abteilung $nr' WHERE idCode = " . $row["idCode"];
     $conn->query($hlpsql);
 }
 
