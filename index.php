@@ -21,7 +21,7 @@ $user = "infoprot_pt";
 $pwd = "Roli4711*";
 */
 
-$dbname = "infoprot_bakery";
+$dbname = "infoprot_beispiel";
 include("connect/dbname.php");
 
 $conn = mysqli_connect($server, $user, $pwd, "$dbname");

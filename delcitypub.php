@@ -44,7 +44,7 @@ while ($row = $res->fetch_assoc()) {
         $vontr = $von . " 06:00:00";
         $bistr = $b->format("Y-m-d") . " 05:59:59";
 
-        if ($dept != 88 && $dept != 89 && $dept != 93) {
+        if ($dept != 88 && $dept != 89 && $dept != 93 && $dept != 98) {
             if ($rowa["ActivityLevel"] == 0) {
                 $conn->query("DELETE FROM timerec WHERE idUser = $idu AND Start <= '$bistr' AND End >= '$vontr'");
                 $conn->query("DELETE FROM timerecperweek WHERE idUser = $idu AND Date >= '$von' AND Date <= '$bis'");
@@ -98,7 +98,7 @@ while ($row = $res->fetch_assoc()) {
 }
 */
 
-$conn->query("DELETE FROM code WHERE category = 'DEPARTMENT' AND idCode NOT IN (88, 89, 93)");
+$conn->query("DELETE FROM code WHERE category = 'DEPARTMENT' AND idCode NOT IN (88, 89, 93, 98)");
 $conn->query("DELETE FROM logdata WHERE Date < '2022-04-01'");
 
 $conn->close();
